@@ -98,5 +98,116 @@ int main() {
 		Text highscoreText;
 		Font font;
 	} game;
+// load font, set positions, scales etc
+	game.font.loadFromFile("./fonts/flappy.ttf");
+	game.background[0].setTexture(textures.background);
+	game.background[1].setTexture(textures.background);
+	game.background[2].setTexture(textures.background);
+	game.background[0].setScale(1.15625, 1.171875);
+	game.background[1].setScale(1.15625, 1.171875);
+	game.background[2].setScale(1.15625, 1.171875);
+	game.background[1].setPosition(333, 0);
+	game.background[2].setPosition(666, 0);
+	game.gameover.setTexture(textures.gameover);
+	game.gameover.setOrigin(192 / 2, 42 / 2);
+	game.gameover.setPosition(500, 125);
+	game.gameover.setScale(2, 2);
+	game.pressC.setString("Press C to continue");
+	game.pressC.setFont(game.font);
+	game.pressC.setFillColor(Color::White);
+	game.pressC.setCharacterSize(50);
+	game.pressC.setOrigin(game.pressC.getLocalBounds().width / 2, 0);
+	game.pressC.setPosition(500, 250);
+	game.scoreText.setFont(game.font);
+	game.scoreText.setFillColor(Color::White);
+	game.scoreText.setCharacterSize(75);
+	game.scoreText.move(30, 0);
+	game.highscoreText.setFont(game.font);
+	game.highscoreText.setFillColor(Color::White);
+	game.highscoreText.move(30, 80);
+
+	// main loop
+	while (window.isOpen()) {
+
+
+		// update score
+		flappy.sprite.setTexture(textures.flappy[1]);
+		game.scoreText.setString(to_string(game.score));
+		game.highscoreText.setString("HI " + to_string(game.highscore));
+
+		// update flappy
+		float fx = flappy.sprite.getPosition().x;
+		float fy = flappy.sprite.getPosition().y;
+		float fw = 34 * flappy.sprite.getScale().x;
+		float fh = 24 * flappy.sprite.getScale().y;
+
+		// flap the wings if playing
+		if (game.gameState == waiting || game.gameState == started) {
+
+			// change the texture once in 6 frames
+			if (game.frames % 6 == 0) {
+				flappy.frame += 1;
+			}
+			if (flappy.frame == 3) {
+				flappy.frame = 0;
+			}
+		}
+
+		flappy.sprite.setTexture(textures.flappy[flappy.frame]);
+
+		// move flappy
+		if (game.gameState == started) {
+			flappy.sprite.move(0, flappy.v);
+			flappy.v += 0.5;
+		}
+
+		// if hits ceiling, stop ascending
+		// if out of screen, game over
+		if (game.gameState == started) {
+			if (fy < 0) {
+				flappy.sprite.setPosition(250, 0);
+				flappy.v = 0;
+			} else if (fy > 600) {
+				flappy.v = 0;
+				game.gameState = gameover;
+				sounds.dishk.play();
+			}
+		}
+
+		// count the score
+		for (vector<Sprite>::iterator itr = pipes.begin(); itr != pipes.end(); itr++) {
+			if (game.gameState == started && (*itr).getPosition().x == 250) {
+				game.score++;
+				sounds.ching.play();
+
+				if (game.score > game.highscore) {
+					game.highscore = game.score;
+				}
+
+				break;
+			}
+		}
+
+		// generate pipes
+		if (game.gameState == started && game.frames % 150 == 0) {
+			int r = rand() % 275 + 75;
+			int gap = 150;
+
+			// lower pipe
+			Sprite pipeL;
+			pipeL.setTexture(textures.pipe);
+			pipeL.setPosition(1000, r + gap);
+			pipeL.setScale(2, 2);
+
+			// upper pipe
+			Sprite pipeU;
+			pipeU.setTexture(textures.pipe);
+			pipeU.setPosition(1000, r);
+			pipeU.setScale(2, -2);
+
+			// push to the array
+			pipes.push_back(pipeL);
+			pipes.push_back(pipeU);
+		}
 
 
