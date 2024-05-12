@@ -209,5 +209,116 @@ int main() {
 			pipes.push_back(pipeL);
 			pipes.push_back(pipeU);
 		}
+// move pipes
+		if (game.gameState == started) {
+			for (vector<Sprite>::iterator itr = pipes.begin(); itr != pipes.end(); itr++) {
+				(*itr).move(-3, 0);
+			}
+		}
+
+		// remove pipes if offscreen
+		if (game.frames % 100 == 0) {
+			vector<Sprite>::iterator startitr = pipes.begin();
+			vector<Sprite>::iterator enditr = pipes.begin();
+
+			for (; enditr != pipes.end(); enditr++) {
+				if ((*enditr).getPosition().x > -104) {
+					break;
+				}
+			}
+
+			pipes.erase(startitr, enditr);
+		}
+
+		// collision detection
+		if (game.gameState == started) {
+			for (vector<Sprite>::iterator itr = pipes.begin(); itr != pipes.end(); itr++) {
+
+				float px, py, pw, ph;
+
+				if ((*itr).getScale().y > 0) {
+					px = (*itr).getPosition().x;
+					py = (*itr).getPosition().y;
+					pw = 52 * (*itr).getScale().x;
+					ph = 320 * (*itr).getScale().y;
+				} else {
+					pw = 52 * (*itr).getScale().x;
+					ph = -320 * (*itr).getScale().y;
+					px = (*itr).getPosition().x;
+					py = (*itr).getPosition().y - ph;
+				}
+
+				if (collides(fx, fy, fw, fh, px, py, pw, ph)) {
+					game.gameState = gameover;
+					sounds.dishk.play();
+				}
+			}
+		}
+
+		// events
+		Event event;
+		while (window.pollEvent(event)) {
+
+			// bye bye
+			if (event.type == Event::Closed) {
+				window.close();
+			}
+			
+			// flap
+			else if (event.type == Event::KeyPressed &&
+					   event.key.code == Keyboard::Space) {
+				if (game.gameState == waiting) {
+					game.gameState = started;
+				}
+
+				if (game.gameState == started) {
+					flappy.v = -8;
+					sounds.hop.play();
+				}
+
+			// restart
+			} else if (event.type == Event::KeyPressed &&
+					   event.key.code == Keyboard::C &&
+					   game.gameState == gameover) {
+				game.gameState = waiting;
+				flappy.sprite.setPosition(250, 300);
+				game.score = 0;
+				pipes.clear();
+			}
+		}
+
+		// clear, draw, display
+		window.clear();
+		window.draw(game.background[0]);
+		window.draw(game.background[1]);
+		window.draw(game.background[2]);
+		window.draw(flappy.sprite);
+
+
+		// draw pipes
+		for (vector<Sprite>::iterator itr = pipes.begin(); itr != pipes.end(); itr++) {
+			window.draw(*itr);
+		}
+
+		// draw scores
+		window.draw(game.scoreText);
+		window.draw(game.highscoreText);
+
+		// gameover. press c to continue
+		if (game.gameState == gameover) {
+			window.draw(game.gameover);
+
+			if (game.frames % 60 < 30) {
+				window.draw(game.pressC);
+			}
+		}
+		window.display();
+
+		// dont forget to update total frames
+		game.frames++;
+	}
+
+	return 0;
+}
 
 
